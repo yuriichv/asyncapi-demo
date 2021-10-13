@@ -1,0 +1,61 @@
+asyncapi: '2.2.0'
+info:
+  title: S3 changelog api demo
+  version: '1.0.0'
+  description: |
+    demo async api application. Kafka + json
+    service listens for minio bucket events and publish as changelog entity to Kafka topic.
+    Read constract as service says: I pulish this _message_ to this _topic_, you can _subsclibe_ to get it.
+  license:
+    name: Apache 2.0
+    url: 'https://www.apache.org/licenses/LICENSE-2.0'
+servers:
+  kafka:
+    url: linux.local:9092
+    protocol: kafka
+    protocolVersion: '2.8.1'
+channels:
+  s3demo.changelog.v1:
+    subscribe:
+      operationId: publishEvent
+      description: here s3demo publishes changelog entity objects
+      message:
+          $ref: "#/components/messages/eventMessage"
+components:
+    messages:
+      eventMessage:
+        name: S3Event
+        bindings:
+          kafka:
+            key:
+              $ref: "#/components/schemas/s3EventKey"
+        payload:
+          $ref: "#/components/schemas/s3EventPayload"
+
+    schemas:
+      s3EventKey:
+        type: object
+        properties:
+          key:
+            type: string
+      s3EventPayload:
+          type: object
+          properties:
+            timestamp:
+              type: integer
+              format: int64
+              description: timestamp.
+            event_type:
+              type: string
+              enum: 
+              - s3_ObjectCreated_Put
+              - s3_ObjectCreated_Post
+              - s3_ObjectCreated_Copy
+              - s3_ObjectRemoved_Delete
+              - s3_ObjectAccessed_Get
+              - s3_ObjectAccessed_Head
+              description: event types as they appear in minio. https://docs.min.io/docs/minio-bucket-notification-guide.html
+            bucket:
+              type: string
+            object:
+              type: string
